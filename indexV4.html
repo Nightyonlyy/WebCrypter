@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Encryption/Decryption</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+        }
+
+        .navbar a {
+            color: white;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        textarea, input {
+            width: 98%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .button-group {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .button-group button {
+            padding: 20px 50px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .button-group button.mode-button {
+            background-color: #333;
+            color: white;
+        }
+
+        .button-group button.mode-button:hover {
+            background-color: #555;
+        }
+
+        #currentRun {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#home">Home</a>
+        <a href="#page1">Page 1</a>
+        <a href="#page2">Page 2</a>
+        <!-- Add more pages as needed -->
+    </div>
+
+    <div class="container">
+        <h1>Text Encryption/Decryption</h1>
+
+        <label for="inputText">Enter Text:</label>
+        <textarea id="inputText" rows="5" placeholder="Enter your text..."></textarea>
+        <label for="password">Enter Password:</label>
+        <input type="password" id="password" placeholder="Enter your password...">
+
+        <label for="outputText">Result:</label>
+        <textarea id="outputText" rows="5" readonly placeholder="Result will appear here..."></textarea>
+
+        <div class="button-group">
+            <button onclick="encryptText()">Encrypt</button>
+            <button onclick="decryptText()">Decrypt</button>
+            <button class="mode-button" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+        </div>
+
+        <label for="numRuns">Number of Runs:</label>
+        <input type="number" id="numRuns" placeholder="Enter the number of runs">
+
+        <div class="button-group">
+            <button onclick="clearAll()">Clear All</button>
+            <button onclick="clearText()">Clear Text</button>
+			<button onclick="clearPassword()">Clear Password</button>
+			<button id="resetCountButton" onclick="resetCount()">Reset Count</button>
+            <button onclick="copyAndClearText()" >Copy Result</button>
+        </div>
+
+        <div id="currentRun">
+            <label for="currentRunLabel">Current Run:</label>
+            <span id="currentRunLabel">0</span>
+        </div>
+    </div>
+
+    <script>
+    let currentRunCount = 0;
+	
+	function sleep(ms) {
+	return new Promise (resolve => setTimeout(resolve, ms));
+	}
+	
+	function copyAndClearText() {
+		copyOutput();
+		sleep(1000).then(() => {clearText(); });
+	}
+
+    function updateRunCount() {
+        currentRunCount++;
+        document.getElementById('currentRunLabel').innerText = currentRunCount;
+    }
+
+    function validateUTF8(char) {
+        const code = char.charCodeAt(0);
+        return (code >= 0 && code <= 127);  // Allow ASCII characters (U+0000 to U+007F)
+    }
+
+    function validateUTF8Key(key) {
+        for (let i = 0; i < key.length; i++) {
+            if (!validateUTF8(key.charAt(i))) {
+                console.error('Invalid key: Only ASCII characters are allowed.');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function encrypt(text, key) {
+        if (!validateUTF8Key(key)) return null;
+
+        let result = '';
+        for (let i = 0; i < text.length; i++) {
+            const charCode = text.charCodeAt(i) + key.charCodeAt(i % key.length);
+            result += String.fromCharCode(charCode);
+        }
+        return result;
+    }
+
+    function decrypt(encryptedText, key) {
+        if (!validateUTF8Key(key)) return null;
+
+        let result = '';
+        for (let i = 0; i < encryptedText.length; i++) {
+            const charCode = encryptedText.charCodeAt(i) - key.charCodeAt(i % key.length);
+            result += String.fromCharCode(charCode);
+        }
+        return result;
+    }
+
+    function encryptText() {
+        const originalText = document.getElementById('inputText').value;
+        const password = document.getElementById('password').value;
+        const numRuns = parseInt(document.getElementById('numRuns').value) || 1;
+
+        let result = originalText;
+
+        for (let run = 0; run < numRuns; run++) {
+            result = encrypt(result, password);
+            updateRunCount();
+        }
+
+        document.getElementById('outputText').value = result;
+    }
+
+    function decryptText() {
+        const encryptedText = document.getElementById('inputText').value;
+        const password = document.getElementById('password').value;
+        const numRuns = parseInt(document.getElementById('numRuns').value) || 1;
+
+        let result = encryptedText;
+
+        for (let run = 0; run < numRuns; run++) {
+            result = decrypt(result, password);
+            updateRunCount();
+        }
+
+        document.getElementById('outputText').value = result;
+    }
+
+    function clearAll() {
+        document.getElementById('inputText').value = '';
+        document.getElementById('outputText').value = '';
+        document.getElementById('password').value = '';
+		resetCount();
+    }
+
+    function clearText() {
+        document.getElementById('inputText').value = '';
+        document.getElementById('outputText').value = '';
+    }
+
+    function clearPassword() {
+        document.getElementById('password').value = '';
+    }
+
+    // Function to set a cookie
+    function setCookie(name, value, days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const expires = "expires=" + date.toUTCString();
+        const cookieString = `${name}=${value};${expires};path=/`;
+        document.cookie = cookieString;
+    }
+
+    // Function to get a cookie value
+    function getCookie(name) {
+        const cookieName = name + "=";
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i];
+            while (cookie.charAt(0) == ' ') {
+                cookie = cookie.substring(1);
+            }
+            if (cookie.indexOf(cookieName) === 0) {
+                return cookie.substring(cookieName.length, cookie.length);
+            }
+        }
+        return "";
+    }
+
+    // Check the cookie for the selected mode and toggle accordingly
+    const savedMode = getCookie("mode");
+    if (savedMode === "dark") {
+        toggleDarkMode();
+    }
+
+    function toggleDarkMode() {
+        const body = document.body;
+        const container = document.querySelector('.container');
+        const textareas = document.querySelectorAll('textarea');
+        const inputs = document.querySelectorAll('input');
+        const buttons = document.querySelectorAll('.mode-button');
+        const headers = document.querySelectorAll('h1');
+
+        body.classList.toggle('dark-mode');
+        container.classList.toggle('dark-mode');
+
+        textareas.forEach(textarea => {
+            textarea.classList.toggle('dark-mode');
+        });
+
+        inputs.forEach(input => {
+            input.classList.toggle('dark-mode');
+        });
+
+        buttons.forEach(button => {
+            button.classList.toggle('dark-mode');
+        });
+
+        headers.forEach(header => {
+            header.classList.toggle('dark-mode');
+        });
+
+        // Update the mode preference in the cookie
+        if (body.classList.contains('dark-mode')) {
+            setCookie("mode", "dark", 30);
+        } else {
+            setCookie("mode", "light", 30);
+        }
+    }
+
+    function copyOutput() {
+        const outputText = document.getElementById('outputText');
+        outputText.select();
+        document.execCommand('copy');
+    }
+
+    function resetCount() {
+        currentRunCount = 0;
+        document.getElementById('currentRunLabel').innerText = currentRunCount;
+    }
+</script> 
+</body>
+</html>
